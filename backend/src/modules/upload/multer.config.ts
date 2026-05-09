@@ -22,8 +22,14 @@ export const multerConfig = {
       const uploadPath = './data/uploads/avatars';
       
       // Create directory if it doesn't exist
-      if (!existsSync(uploadPath)) {
-        mkdirSync(uploadPath, { recursive: true });
+      try {
+        if (!existsSync(uploadPath)) {
+          mkdirSync(uploadPath, { recursive: true });
+        }
+      } catch (err) {
+        // Handle the error
+        cb(err, false);
+        return;
       }
       
       cb(null, uploadPath);
