@@ -104,7 +104,7 @@ async function bootstrap() {
   Logger.log(`GEMINI_API_KEY: ${process.env.GEMINI_API_KEY ? 'set' : 'NOT SET'}`, 'Bootstrap');
   Logger.log('====================================', 'Bootstrap');
 
-  await app.listen(port);
+  await app.listen(port, "0.0.0.0");
   Logger.log(`Server running on port ${port}`, 'Bootstrap');
 }
 bootstrap();
