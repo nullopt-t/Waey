@@ -54,8 +54,8 @@ Copy example file:
 
 ```bash
 cp backend/.env.example backend/.env
+```
 
----
 ## 📦 Run with Docker (Recommended)
 
 ```bash
