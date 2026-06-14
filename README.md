@@ -42,6 +42,18 @@ docker-compose.yml → Full stack setup
 - npm or yarn
 - MongoDB (local or cloud)
 - Docker (optional)
+---
+## ⚠️ Environment Variables
+
+You must create your own `.env` files before running the project.
+
+We provide `.env.example` files for reference.
+
+### Backend
+Copy example file:
+
+```bash
+cp backend/.env.example backend/.env
 
 ---
 ## 📦 Run with Docker (Recommended)
