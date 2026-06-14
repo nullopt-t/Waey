@@ -110,7 +110,7 @@ export class UploadController {
     @Request() req,
   ) {
     const apiUrl = this.configService.get('API_URL', 'http://localhost:4000');
-    
+
     return {
       success: true,
       url: `/uploads/articles/${file.filename}`,

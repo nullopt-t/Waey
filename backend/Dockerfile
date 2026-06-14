@@ -1,31 +1,28 @@
-# Production Dockerfile for Render (via Docker Hub)
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci --legacy-peer-deps
+
+COPY . .
+
+RUN npm run build
+
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (needed for seed script)
-RUN npm install --legacy-peer-deps
+RUN npm ci --omit=dev --legacy-peer-deps
 
-# Copy the rest of the application code
-COPY . .
-
-# Build the app
-RUN npm run build
-
-# Create upload directories
-RUN mkdir -p ./data/uploads/posts ./data/uploads/articles
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/data ./data
 
 ENV NODE_ENV=production
 
-# Expose port
 EXPOSE 8080
 
-# Health check
-# HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-#   CMD wget --quiet --tries=1 --spider http://localhost:8081/health || exit 1
-
-# Start application
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/main"]

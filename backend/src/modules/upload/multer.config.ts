@@ -20,7 +20,7 @@ export const multerConfig = {
   storage: diskStorage({
     destination: (req: any, file: any, cb: any) => {
       const uploadPath = './data/uploads/avatars';
-      
+
       // Create directory if it doesn't exist
       try {
         if (!existsSync(uploadPath)) {
@@ -31,7 +31,7 @@ export const multerConfig = {
         cb(err, false);
         return;
       }
-      
+
       cb(null, uploadPath);
     },
     filename: (req: any, file: any, cb: any) => {
