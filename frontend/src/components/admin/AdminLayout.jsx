@@ -33,6 +33,11 @@ const AdminLayout = ({ children, title }) => {
     { path: '/admin/articles', icon: 'fa-newspaper', label: 'المقالات' },
     { path: '/admin/stories', icon: 'fa-book-open', label: 'القصص' },
     { path: '/admin/books', icon: 'fa-book', label: 'الكتب' },
+    {
+      path: '/admin/assessments',
+      icon: 'fa-clipboard-list',
+      label: 'الاختبارات',
+    },
     { path: '/videos/manage', icon: 'fa-video', label: 'الفيديوهات' },
     { path: '/admin/therapists', icon: 'fa-user-md', label: 'المعالجين', hidden: true },
     { path: '/admin/feedback', icon: 'fa-comments', label: 'التغذية الراجعة' },
@@ -52,9 +57,8 @@ const AdminLayout = ({ children, title }) => {
       </button>
 
       {/* Sidebar */}
-      <aside className={`fixed lg:sticky top-0 right-0 h-screen w-64 lg:w-72 bg-[var(--card-bg)] backdrop-blur-md border-l border-[var(--border-color)]/30 shadow-2xl transform transition-transform duration-300 z-40 overflow-y-auto ${
-        isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
-      }`}>
+      <aside className={`fixed lg:sticky top-0 right-0 h-screen w-64 lg:w-72 bg-[var(--card-bg)] backdrop-blur-md border-l border-[var(--border-color)]/30 shadow-2xl transform transition-transform duration-300 z-40 overflow-y-auto ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+        }`}>
         <div className="p-6">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
@@ -73,11 +77,10 @@ const AdminLayout = ({ children, title }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  location.pathname === item.path
-                    ? 'bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white shadow-lg'
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
-                }`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${location.pathname === item.path
+                  ? 'bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] text-white shadow-lg'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <i className={`fas ${item.icon} w-5`}></i>

@@ -19,6 +19,7 @@ const AdminDashboard = () => {
     therapists: 0,
     medicalContacts: 0,
     journeys: 0,
+    assessments: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -42,9 +43,21 @@ const AdminDashboard = () => {
         apiRequest('/therapists/admin/all?page=1&limit=1', { method: 'GET' }).catch(() => ({ therapists: [], total: 0 })),
         apiRequest('/medical-contacts/admin?page=1&limit=1', { method: 'GET' }).catch(() => ({ data: [], pagination: { total: 0 } })),
         apiRequest('/journey/admin/all', { method: 'GET' }).catch(() => []),
+        apiRequest('/journey/admin/all', { method: 'GET' }).catch(() => []),
+        apiRequest('/assessments', { method: 'GET' }).catch(() => []),
       ];
 
-      const [usersData, articlesData, videosData, reportsData, storiesData, booksData, feedbackData, therapistsData, medicalContactsData, journeysData] = await Promise.all(promises);
+      const [usersData,
+        articlesData,
+        videosData,
+        reportsData,
+        storiesData,
+        booksData,
+        feedbackData,
+        therapistsData,
+        medicalContactsData,
+        journeysData,
+        assessmentsData,] = await Promise.all(promises);
 
       // Get counts from API responses
       setStats({
@@ -58,9 +71,12 @@ const AdminDashboard = () => {
         therapists: therapistsData?.total || 0,
         medicalContacts: medicalContactsData?.pagination?.total || 0,
         journeys: Array.isArray(journeysData) ? journeysData.length : 0,
+        assessments: Array.isArray(assessmentsData)
+          ? assessmentsData.length
+          : assessmentsData?.assessments?.length || 0,
       });
     } catch (error) {
-      
+
     } finally {
       setLoading(false);
     }
@@ -138,6 +154,13 @@ const AdminDashboard = () => {
       icon: 'fa-road',
       color: 'from-violet-500 to-purple-600',
       link: '/admin/journeys',
+    },
+    {
+      title: 'الاختبارات',
+      value: stats.assessments || 0,
+      icon: 'fa-clipboard-list',
+      color: 'from-cyan-500 to-blue-600',
+      link: '/admin/assessments',
     },
   ];
 

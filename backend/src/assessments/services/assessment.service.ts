@@ -42,11 +42,50 @@ export class AssessmentService {
     };
   }
 
+
   async findAll() {
-    return this.assessmentModel.find({ isPublished: true }, {
-      title: 1,
-      description: 1,
-    });
+    const assessments = await this.assessmentModel.find().select(
+      'title description isPublished timeLimit passingScore createdAt updatedAt'
+    );
+
+    if (assessments.length === 0) return [];
+
+    // ✅ Use raw ObjectId values directly from Mongoose documents
+    const ids = assessments.map((a) => a._id);
+
+    console.log('📋 Assessment IDs:', ids);
+
+    const questions = await this.questionModel
+      .find({ assessmentId: { $in: ids } })
+      .sort({ order: 1 });
+
+    console.log('❓ Questions found:', questions.length);
+    console.log('❓ Question assessmentIds:', questions.map((q) => q.assessmentId.toString()));
+
+    // Group by assessmentId string
+    const map = new Map<string, any[]>();
+    for (const q of questions) {
+      const key = q.assessmentId.toString();
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push({
+        _id: q._id.toString(),
+        text: q.text,
+        order: q.order,
+        options: q.options.map((o) => ({
+          _id: o._id.toString(),
+          label: o.label,
+          score: o.score,
+        })),
+      });
+    }
+
+    return assessments.map((a) => ({
+      _id: a._id.toString(),
+      title: a.title,
+      description: a.description,
+      isPublished: a.isPublished ?? false,
+      questions: map.get(a._id.toString()) ?? [],
+    }));
   }
 
   async findOne(id: string) {
@@ -56,72 +95,83 @@ export class AssessmentService {
       throw new NotFoundException("Assessment not found");
     }
 
+    // Explicitly convert string ID to ObjectId for the query
     const questions = await this.questionModel
-      .find({ assessmentId: id })
+      .find({ assessmentId: new Types.ObjectId(id) })
       .sort({ order: 1 });
 
     return {
       ...assessment.toObject(),
-      questions,
+      _id: assessment._id.toString(),
+      questions: questions.map(q => q.toObject()),
     };
   }
 
   async submit(userId: string, dto: SubmitAssessmentDto) {
     const assessment = await this.assessmentModel.findById(dto.assessmentId);
+    if (!assessment) throw new NotFoundException('Assessment not found');
 
-    if (!assessment) {
-      throw new NotFoundException('Assessment not found');
-    }
-
-    const questions = await this.questionModel.find({
-      assessmentId: dto.assessmentId,
-    });
-
-    // map questions for fast lookup
-    const questionMap = new Map(
-      questions.map((q) => [q._id.toString(), q]),
-    );
+    const questions = await this.questionModel.find({ assessmentId: dto.assessmentId });
+    const questionMap = new Map(questions.map((q) => [q._id.toString(), q]));
 
     let totalScore = 0;
     for (const answer of dto.answers) {
-      const question = await this.questionModel.findById(answer.questionId);
-      const option = question.options.id(answer.optionId);
-      if (!option) {
-        throw new BadRequestException("Invalid option");
+      const question = questionMap.get(answer.questionId);
+      if (!question) continue; // Skip invalid questions
+
+      // Find the selected option within the question's options
+      const option = question.options.find((opt: any) => opt._id.toString() === answer.optionId);
+
+      if (option) {
+        totalScore += option.score;
+      } else {
+        throw new BadRequestException("Invalid option selected");
       }
-
-      totalScore += option.score;
     }
 
-    const result = assessment.results.find(
-      (r) =>
-        totalScore >= r.minScore &&
-        totalScore <= r.maxScore,
-    );
+    // Calculate max possible score for percentage if needed
+    const maxScore = questions.reduce((acc, q) => {
+      const maxOptScore = Math.max(...q.options.map((o: any) => o.score));
+      return acc + maxOptScore;
+    }, 0);
 
-    if (!result) {
-      throw new NotFoundException('No matching result');
+    // Find matching result
+    let resultTitle = 'Completed';
+    let resultDescription = 'Assessment submitted successfully.';
+
+    if (assessment.results && assessment.results.length > 0) {
+      const matchedResult = assessment.results.find(
+        (r) => totalScore >= r.minScore && totalScore <= r.maxScore
+      );
+
+      if (!matchedResult) {
+        // Fallback if score is outside all defined ranges
+        resultTitle = 'Ungraded';
+        resultDescription = 'Score did not match any predefined result category.';
+      } else {
+        resultTitle = matchedResult.title;
+        resultDescription = matchedResult.description;
+      }
     }
 
-    // save attempt
+    // Save attempt
     await this.attemptModel.create({
       userId,
       assessmentId: dto.assessmentId,
       answers: dto.answers,
       totalScore,
-      resultTitle: result.title,
-      resultDescription: result.description,
+      resultTitle,
+      resultDescription,
     });
 
     return {
       score: totalScore,
       result: {
-        title: result.title,
-        description: result.description,
+        title: resultTitle,
+        description: resultDescription,
       },
     };
   }
-
   async togglePublish(id: string, isPublished: boolean) {
     const assessment = await this.assessmentModel.findById(id);
 
@@ -160,14 +210,16 @@ export class AssessmentService {
 
   async addQuestion(assessmentId: string, dto: CreateQuestionDto) {
     const assessment = await this.assessmentModel.findById(assessmentId);
-
     if (!assessment) {
-      throw new NotFoundException("Assessment not found");
+      throw new NotFoundException('Assessment not found');
     }
 
+    // EXPLICITLY CAST to ObjectId to ensure consistency in the database
     const question = await this.questionModel.create({
-      assessmentId,
-      ...dto,
+      assessmentId: new Types.ObjectId(assessmentId),
+      text: dto.text,
+      order: dto.order,
+      options: dto.options,
     });
 
     return question;

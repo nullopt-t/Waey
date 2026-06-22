@@ -53,6 +53,14 @@ export class AssessmentController {
     return this.service.getAssessmentAttempts(id);
   }
 
+  @Get()
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع' })
+  findAll() {
+    return this.service.findAll();
+  }
+
   @Get(":id")
   @ApiBearerAuth('access-token')
   @ApiResponse({ status: 401, description: 'غير مصرح' })
@@ -61,13 +69,7 @@ export class AssessmentController {
   findOne(@Param("id") id: string) {
     return this.service.findOne(id);
   }
-  @Get()
-  @ApiBearerAuth('access-token')
-  @ApiResponse({ status: 401, description: 'غير مصرح' })
-  @ApiResponse({ status: 403, description: 'ممنوع' })
-  findAll() {
-    return this.service.findAll();
-  }
+
 
 
   @Patch(":id/publish")
