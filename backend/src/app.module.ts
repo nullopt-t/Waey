@@ -25,6 +25,7 @@ import { FeedbackModule } from './feedback/feedback.module';
 import { NotificationModule } from './notification/notification.module';
 import { MedicalContactModule } from './medical-contact/medical-contact.module';
 import { JourneyModule } from './journey/journey.module';
+import { AssessmentModule } from "./assessments/assessments.module";
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { JourneyModule } from './journey/journey.module';
     NotificationModule,
     MedicalContactModule,
     JourneyModule,
+    AssessmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
