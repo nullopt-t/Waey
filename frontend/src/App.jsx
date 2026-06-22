@@ -70,7 +70,8 @@ import FloatingChatButton from './components/FloatingChatButton.jsx';
 import JourneyPage from './pages/JourneyPage.jsx';
 import JourneyLevelPage from './pages/JourneyLevelPage.jsx';
 import WaeyAddictionPage from './pages/WaeyAddictionPage.jsx';
-
+import AssessmentsPage from './pages/AssessmentsPage.jsx';
+import AdminAssessmentsPage from './pages/admin/AdminAssessments.jsx';
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -236,6 +237,13 @@ function AppWrapper() {
               <AnimatedRoute>
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminJourneysPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/admin/assessments" element={
+              <AnimatedRoute>
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminAssessmentsPage />
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
@@ -421,6 +429,13 @@ function AppWrapper() {
               <AnimatedRoute>
                 <ProtectedRoute>
                   <ProfileSettingsPage />
+                </ProtectedRoute>
+              </AnimatedRoute>
+            } />
+            <Route path="/assessments" element={
+              <AnimatedRoute>
+                <ProtectedRoute allowedRoles={['user', 'admin']}>
+                  <AssessmentsPage />
                 </ProtectedRoute>
               </AnimatedRoute>
             } />
