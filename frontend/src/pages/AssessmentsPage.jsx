@@ -84,16 +84,9 @@ const QuizModal = ({ assessment, onClose, onDone }) => {
               مكتمل
             </h2>
 
-            <p className="text-[var(--text-secondary)] mb-6">
+            <p className="text-[var(--text-secondary)] mb-8">
               تم إرسال إجاباتك بنجاح
             </p>
-
-            <div className="bg-[var(--bg-secondary)] rounded-xl p-4 mb-8">
-              <p className="text-sm text-[var(--text-secondary)] mb-1">النتيجة النهائية</p>
-              <p className="text-4xl font-bold text-[var(--primary-color)]">
-                {result.score}%
-              </p>
-            </div>
 
             <button
               onClick={handleCloseResult}
@@ -249,21 +242,15 @@ const QuizModal = ({ assessment, onClose, onDone }) => {
 const Assessments = () => {
   const { error: showError } = useToast();
   const [assessments, setAssessments] = useState([]);
-  const [myAttempts, setMyAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('available'); // 'available' | 'history'
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [loadingQuiz, setLoadingQuiz] = useState(null);
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const [list, attempts] = await Promise.all([
-        assessmentAPI.getAll().catch(() => []),
-        assessmentAPI.getMyAttempts().catch(() => []),
-      ]);
+      const list = await assessmentAPI.getAll().catch(() => []);
       setAssessments(Array.isArray(list) ? list : list.assessments || []);
-      setMyAttempts(Array.isArray(attempts) ? attempts : []);
     } catch {
       showError('فشل تحميل الاختبارات');
     } finally {
@@ -285,12 +272,6 @@ const Assessments = () => {
     }
   };
 
-  const attemptsByAssessment = myAttempts.reduce((acc, attempt) => {
-    const id = attempt.assessmentId || attempt.assessment?._id;
-    if (id) acc[id] = (acc[id] || 0) + 1;
-    return acc;
-  }, {});
-
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" dir="rtl">
       <div className="max-w-4xl mx-auto px-4 py-10">
@@ -303,38 +284,11 @@ const Assessments = () => {
           </div>
         </AnimatedItem>
 
-        {/* Tabs */}
-        <AnimatedItem type="slideUp" delay={0.05}>
-          <div className="flex gap-2 mb-6 bg-[var(--bg-secondary)] rounded-xl p-1.5 w-fit">
-            {[
-              { id: 'available', label: 'الاختبارات', icon: 'fa-clipboard-list' },
-              { id: 'history', label: 'سجل المحاولات', icon: 'fa-history' },
-            ].map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === t.id
-                  ? 'bg-[var(--card-bg)] text-[var(--text-primary)] shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-              >
-                <i className={`fas ${t.icon} text-sm`} />
-                {t.label}
-                {t.id === 'history' && myAttempts.length > 0 && (
-                  <span className="bg-[var(--primary-color)] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {myAttempts.length}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </AnimatedItem>
-
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[var(--primary-color)]" />
           </div>
-        ) : activeTab === 'available' ? (
+        ) : (
           /* ── Available Assessments ── */
           <div className="space-y-4">
             {assessments.length === 0 ? (
@@ -346,7 +300,6 @@ const Assessments = () => {
               </AnimatedItem>
             ) : (
               assessments.map((a, idx) => {
-                const tries = attemptsByAssessment[a._id] || 0;
                 return (
                   <AnimatedItem key={a._id} type="slideUp" delay={0.05 * idx}>
                     <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 hover:border-[var(--primary-color)]/40 transition-all p-6">
@@ -376,12 +329,6 @@ const Assessments = () => {
                                 نجاح {a.passingScore}%
                               </span>
                             )}
-                            {tries > 0 && (
-                              <span className="flex items-center gap-1.5 text-xs text-[var(--primary-color)] bg-[var(--primary-color)]/10 px-3 py-1.5 rounded-lg">
-                                <i className="fas fa-redo" />
-                                {tries} محاولة سابقة
-                              </span>
-                            )}
                           </div>
                         </div>
                         <button
@@ -395,7 +342,7 @@ const Assessments = () => {
                           ) : (
                             <>
                               <i className="fas fa-play text-sm" />
-                              {tries > 0 ? 'إعادة' : 'ابدأ'}
+                              ابدأ
                             </>
                           )}
                         </button>
@@ -404,52 +351,6 @@ const Assessments = () => {
                   </AnimatedItem>
                 );
               })
-            )}
-          </div>
-        ) : (
-          /* ── Attempt History ── */
-          <div>
-            {myAttempts.length === 0 ? (
-              <AnimatedItem type="slideUp" delay={0.1}>
-                <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border-color)]/30 p-16 text-center">
-                  <i className="fas fa-history text-5xl text-[var(--text-secondary)] opacity-30 mb-4 block" />
-                  <p className="text-[var(--text-secondary)]">لم تجرِ أي اختبارات بعد</p>
-                  <button
-                    onClick={() => setActiveTab('available')}
-                    className="mt-4 px-6 py-2.5 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors"
-                  >
-                    ابدأ اختباراً
-                  </button>
-                </div>
-              </AnimatedItem>
-            ) : (
-              <div className="space-y-3">
-                {myAttempts.map((attempt, idx) => (
-                  <AnimatedItem key={attempt._id || idx} type="slideUp" delay={0.04 * idx}>
-                    <div className="bg-[var(--card-bg)] backdrop-blur-md rounded-2xl border border-[var(--border-color)]/30 p-5 flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${attempt.passed ? 'bg-green-500/20' : 'bg-red-500/20'
-                        }`}>
-                        <i className={`fas ${attempt.passed ? 'fa-check' : 'fa-times'} text-lg ${attempt.passed ? 'text-green-500' : 'text-red-500'
-                          }`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[var(--text-primary)] truncate">
-                          {attempt.assessment?.title || attempt.assessmentTitle || 'اختبار'}
-                        </p>
-                        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                          {attempt.createdAt ? new Date(attempt.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}
-                        </p>
-                      </div>
-                      <div className="text-center flex-shrink-0">
-                        <p className={`text-2xl font-bold ${attempt.passed ? 'text-green-500' : 'text-red-500'}`}>
-                          {attempt.score ?? '—'}%
-                        </p>
-                        <p className="text-xs text-[var(--text-secondary)]">{attempt.passed ? 'ناجح' : 'راسب'}</p>
-                      </div>
-                    </div>
-                  </AnimatedItem>
-                ))}
-              </div>
             )}
           </div>
         )}
