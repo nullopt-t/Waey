@@ -117,11 +117,10 @@ const MedicalContactsPage = () => {
                 <button
                   key={filter.id}
                   onClick={() => setFilterType(filter.id)}
-                  className={`px-4 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${
-                    filterType === filter.id
+                  className={`px-4 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${filterType === filter.id
                       ? 'bg-[var(--primary-color)] text-white shadow-lg'
                       : 'bg-[var(--card-bg)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] border border-[var(--border-color)]'
-                  }`}
+                    }`}
                 >
                   <i className={`fas ${filter.icon} ml-2`}></i>
                   {filter.label}
@@ -204,6 +203,14 @@ const MedicalContactsPage = () => {
                       >
                         <i className="fas fa-envelope ml-1"></i> راسل
                       </a>
+                      {contact.type === 'doctor' && (
+                        <button
+                          onClick={() => { }}
+                          className="flex-1 px-3 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors text-center cursor-pointer"
+                        >
+                          <i className="fas fa-calendar-check ml-1"></i> احجز موعد
+                        </button>
+                      )}
                     </div>
                   </div>
                 </AnimatedItem>
