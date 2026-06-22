@@ -17,14 +17,16 @@ export class AssessmentQuestion {
 
   @Prop([
     {
+      _id: { type: Types.ObjectId, auto: true },
       label: String,
       score: Number,
     },
   ])
-  options: {
+  options: Types.DocumentArray<{
+    _id: Types.ObjectId;
     label: string;
     score: number;
-  }[];
+  }>;
 }
 
 export const AssessmentQuestionSchema =

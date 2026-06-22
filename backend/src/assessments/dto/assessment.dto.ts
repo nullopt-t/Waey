@@ -3,6 +3,8 @@ import {
   IsArray,
   ValidateNested,
   IsNumber,
+  IsOptional,
+  IsBoolean,
 } from "class-validator";
 
 import { Type } from "class-transformer";
@@ -11,9 +13,8 @@ export class AnswerDto {
   @IsString()
   questionId: string;
 
-  @IsNumber()
-  @Type(() => Number)
-  score: number;
+  @IsString()
+  optionId: string;
 }
 
 export class SubmitAssessmentDto {
@@ -74,4 +75,31 @@ export class CreateAssessmentDto {
   @ValidateNested({ each: true })
   @Type(() => QuestionDto)
   questions: QuestionDto[];
+}
+
+export class UpdateAssessmentDto {
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPublished?: boolean;
+}
+
+export class CreateQuestionDto {
+  @IsString()
+  text: string;
+
+  @IsNumber()
+  order: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OptionDto)
+  options: OptionDto[];
 }
