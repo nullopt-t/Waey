@@ -9,26 +9,12 @@ const QuizModal = ({ assessment, onClose, onDone }) => {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
-  const [timeLeft, setTimeLeft] = useState((assessment.timeLimit || 30) * 60);
-
-  // Countdown
-  useEffect(() => {
-    if (result) return;
-    if (timeLeft <= 0) { handleSubmit(); return; }
-    const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [timeLeft, result]);
+  const [result, setResult] = useState(false);
 
   const questions = assessment.questions || [];
   const q = questions[current];
   const answered = Object.keys(answers).length;
 
-  const formatTime = (s) => {
-    const m = Math.floor(s / 60).toString().padStart(2, '0');
-    const sec = (s % 60).toString().padStart(2, '0');
-    return `${m}:${sec}`;
-  };
 
   const handleSubmit = async () => {
     try {
@@ -120,9 +106,6 @@ const QuizModal = ({ assessment, onClose, onDone }) => {
                 {answered} / {questions.length} أجبت
               </span>
             </div>
-          </div>
-          <div className={`font-mono text-lg font-bold ${timeLeft < 60 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>
-            {formatTime(timeLeft)}
           </div>
         </div>
 
@@ -317,12 +300,7 @@ const Assessments = () => {
                               <i className="fas fa-question-circle text-[var(--primary-color)]" />
                               {a.questions?.length || 0} سؤال
                             </span>
-                            {a.timeLimit && (
-                              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] bg-[var(--bg-secondary)] px-3 py-1.5 rounded-lg">
-                                <i className="fas fa-clock text-[var(--primary-color)]" />
-                                {a.timeLimit} دقيقة
-                              </span>
-                            )}
+
                             {a.passingScore != null && (
                               <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] bg-[var(--bg-secondary)] px-3 py-1.5 rounded-lg">
                                 <i className="fas fa-award text-[var(--primary-color)]" />
