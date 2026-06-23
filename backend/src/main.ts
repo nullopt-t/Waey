@@ -22,7 +22,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  // Security middleware 
+  // Security middleware
   // app.use(helmet());
 
   app.use(compression());
@@ -46,7 +46,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
+      // forbidNonWhitelisted: true,
       transform: true,
       transformOptions: {
         // Convert empty strings to undefined

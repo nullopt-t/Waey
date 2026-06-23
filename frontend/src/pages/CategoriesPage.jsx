@@ -4,6 +4,7 @@ import AnimatedItem from '../components/AnimatedItem.jsx';
 
 const CategoriesPage = () => {
   const categories = [
+    // Keep your existing categories...
     {
       id: 11,
       title: 'رحلة وعي',
@@ -89,6 +90,15 @@ const CategoriesPage = () => {
       description: 'توعية علمية وعلاج آمن للإدمان',
       icon: 'fas fa-brain',
       path: '/waey-addiction'
+    },
+    // Add the assessments link as a category object at the end
+    {
+      id: 'assessments', // Use a unique identifier
+      title: 'الاختبارات',
+      description: 'تحليل مبدئي لحالتك',
+      icon: 'fas fa-clipboard-list', // Choose an appropriate icon
+      path: '/assessments',
+      featured: false // Set to true if you want it highlighted like 'رحلة وعي'
     }
   ];
 
