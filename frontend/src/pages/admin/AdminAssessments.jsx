@@ -116,12 +116,15 @@ const QuestionModal = ({ assessmentId, onClose, onSuccess }) => {
       </div>
     </div>
   );
-};// ─── Assessment Form Modal ────────────────────────────────────────────────────
+};
+// ─── Assessment Form Modal ────────────────────────────────────────────────────
+
 const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
   const { success, error: showError } = useToast();
   const [saving, setSaving] = useState(false);
 
   // Initialize form according to CreateAssessmentDto structure
+  // IMPORTANT: Ensure 'assessment' passed in contains the full data including results with recommendations as objects
   const [form, setForm] = useState({
     title: assessment?.title || '',
     description: assessment?.description || '',
@@ -155,29 +158,31 @@ const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
     }));
   };
 
-  // Function to add a recommendation to a specific result object
+  // Function to add a recommendation object to a specific result object
   const addRecommendation = (resultIndex) => {
     setForm(prev => {
       const updatedResults = [...prev.results];
       const newRecommendations = [...(updatedResults[resultIndex].recommendations || [])];
-      newRecommendations.push('');
+      // Push an object with both text and link fields
+      newRecommendations.push({ text: '', link: '' });
       updatedResults[resultIndex] = { ...updatedResults[resultIndex], recommendations: newRecommendations };
       return { ...prev, results: updatedResults };
     });
   };
 
-  // Function to update a specific recommendation within a specific result object
-  const updateRecommendation = (resultIndex, recIndex, value) => {
+  // Function to update a specific field (text or link) of a specific recommendation within a specific result object
+  const updateRecommendation = (resultIndex, recIndex, field, value) => {
     setForm(prev => {
       const updatedResults = [...prev.results];
       const updatedRecs = [...updatedResults[resultIndex].recommendations];
-      updatedRecs[recIndex] = value;
+      // Update the specific field of the recommendation object
+      updatedRecs[recIndex] = { ...updatedRecs[recIndex], [field]: value };
       updatedResults[resultIndex] = { ...updatedResults[resultIndex], recommendations: updatedRecs };
       return { ...prev, results: updatedResults };
     });
   };
 
-  // Function to remove a specific recommendation from a specific result object
+  // Function to remove a specific recommendation object from a specific result object
   const removeRecommendation = (resultIndex, recIndex) => {
     setForm(prev => {
       const updatedResults = [...prev.results];
@@ -186,7 +191,6 @@ const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
       return { ...prev, results: updatedResults };
     });
   };
-
 
   const handleSubmit = async () => {
     if (!form.title.trim()) return showError('أدخل عنوان الاختبار');
@@ -337,6 +341,7 @@ const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
                         placeholder="رسالة تظهر للمستخدم بناءً على النتيجة"
                       />
                     </div>
+                    {/* Updated Recommendations Section */}
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-1">
                         <label className="text-xs font-medium text-[var(--text-secondary)]">التوصيات</label>
@@ -350,22 +355,31 @@ const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
                       </div>
                       <div className="space-y-2">
                         {(result.recommendations || []).map((rec, recIndex) => (
-                          <div key={recIndex} className="flex gap-2">
+                          <div key={recIndex} className="flex flex-col gap-1"> {/* Changed layout for two fields */}
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={rec.text}
+                                onChange={(e) => updateRecommendation(index, recIndex, 'text', e.target.value)} // Update 'text' field
+                                className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors text-sm"
+                                placeholder="نص التوصية"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeRecommendation(index, recIndex)}
+                                className="text-red-500 hover:text-red-700 p-1.5 transition-colors self-end" // Align button to bottom
+                                title="حذف التوصية"
+                              >
+                                <i className="fas fa-trash text-xs"></i>
+                              </button>
+                            </div>
                             <input
-                              type="text"
-                              value={rec}
-                              onChange={(e) => updateRecommendation(index, recIndex, e.target.value)}
-                              className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors text-sm"
-                              placeholder="توصية"
+                              type="url" // Use 'url' type for validation hint
+                              value={rec.link}
+                              onChange={(e) => updateRecommendation(index, recIndex, 'link', e.target.value)} // Update 'link' field
+                              className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors text-sm pl-8" // Indented slightly, maybe add a link icon prefix
+                              placeholder="https://example.com"
                             />
-                            <button
-                              type="button"
-                              onClick={() => removeRecommendation(index, recIndex)}
-                              className="text-red-500 hover:text-red-700 p-1.5 transition-colors"
-                              title="حذف التوصية"
-                            >
-                              <i className="fas fa-trash text-xs"></i>
-                            </button>
                           </div>
                         ))}
                       </div>

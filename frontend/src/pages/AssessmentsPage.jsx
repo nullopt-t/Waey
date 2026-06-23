@@ -108,10 +108,10 @@ const QuizModal = ({ assessment, onClose, onDone }) => {
 
             {/* --- SCORE SUMMARY REMOVED --- */}
             {/* <div className="bg-[var(--bg-secondary)] rounded-xl p-4 mb-6">
-                <p className="text-[var(--text-primary)] font-medium">
-                  النتيجة: {result.score} / {result.maxScore} ({result.percentage.toFixed(2)}%)
-                </p>
-              </div> */}
+                  <p className="text-[var(--text-primary)] font-medium">
+                    النتيجة: {result.score} / {result.maxScore} ({result.percentage.toFixed(2)}%)
+                  </p>
+                </div> */}
 
             {/* Doctor Referral Warning - Conditional based on admin flag */}
             {result.needsDoctor && (
@@ -125,11 +125,22 @@ const QuizModal = ({ assessment, onClose, onDone }) => {
             {result.recommendations && result.recommendations.length > 0 && (
               <div className="text-left mb-6">
                 <h3 className="font-bold text-[var(--text-primary)] mb-2">التوصيات:</h3>
-                <ul className="list-disc list-inside text-[var(--text-secondary)] space-y-1">
+                <ul className="list-disc list-inside text-[var(--text-secondary)] space-y-2"> {/* Added space-y-2 for better spacing */}
                   {result.recommendations.map((rec, index) => (
-                    <li key={index}>
-                      {/* Example: Adjust based on your RecommendationItem structure */}
-                      {rec.title || rec} {/* Fallback to rec if it's a simple string */}
+                    <li key={index} className="break-words"> {/* Added break-words for long URLs */}
+                      {/* Display text, and if link exists, make it clickable */}
+                      {rec.text} {rec.link && (
+                        <a
+                          href={rec.link}
+                          target="_blank"
+                          rel="noopener noreferrer" // Security best practice for external links
+                          className="text-[var(--primary-color)] hover:underline font-medium text-sm" // Style the link
+                        >
+                          (رابط)
+                        </a>
+                      )}
+                      {/* Fallback for older data structures (if rec was a string) - unlikely now, but safe */}
+                      {!rec.text && typeof rec === 'string' && rec}
                     </li>
                   ))}
                 </ul>

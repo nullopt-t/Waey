@@ -140,9 +140,9 @@ export class AssessmentService {
     const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 
     // Find matching result
-    let resultTitle = 'Completed';
-    let resultDescription = 'Assessment submitted successfully.';
-    let resultMessage = 'Thank you for completing the assessment.'; // Default message
+    let resultTitle = 'مكتمل'; // Default title in Arabic
+    let resultDescription = 'تم إرسال الإجابة بنجاح.'; // Default description in Arabic
+    let resultMessage = 'شكرًا لاستكمالك التقييم.'; // Default message in Arabic
     let recommendations: any[] = []; // Array for recommendations
     let needsDoctor = false; // Flag for doctor referral
     let matchedResultObject = null; // Store the matched object for potential extra data
@@ -154,9 +154,9 @@ export class AssessmentService {
 
       if (!matchedResultObject) {
         // Fallback if score is outside all defined ranges
-        resultTitle = 'Ungraded';
-        resultDescription = 'Score did not match any predefined result category.';
-        resultMessage = 'Could not determine a specific outcome for your score.';
+        resultTitle = 'غير محدد'; // Fallback title in Arabic
+        resultDescription = 'لا يوجد نطاق تقييم مطابق.'; // Fallback description in Arabic
+        resultMessage = 'تعذر تحديد نتيجة محددة بناءً على التقييم.'; // Fallback message in Arabic
       } else {
         resultTitle = matchedResultObject.title;
         resultDescription = matchedResultObject.description;

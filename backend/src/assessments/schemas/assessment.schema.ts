@@ -1,7 +1,14 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { Schema as MongooseSchema, HydratedDocument } from "mongoose";
 
 export type AssessmentDocument = HydratedDocument<Assessment>;
+
+
+const RecommendationSchema = new MongooseSchema({ // Use the Schema imported from @nestjs/mongoose
+  text: { type: String, required: true },
+  link: { type: String, required: true },
+});
+
 
 @Schema({ timestamps: true })
 export class Assessment {
@@ -19,11 +26,11 @@ export class Assessment {
     {
       minScore: { type: Number, required: true },
       maxScore: { type: Number, required: true },
-      title: { type: String, required: true }, // Admin-defined title
-      description: { type: String, required: true }, // Admin-defined description
-      message: { type: String, required: true }, // Admin-defined message
-      recommendations: [{ type: String }], // Or define a sub-schema if needed
-      needsDoctor: { type: Boolean, default: false }, // Admin-defined flag
+      title: { type: String, required: true },
+      description: { type: String, required: true },
+      message: { type: String, required: true },
+      recommendations: [RecommendationSchema], // Use the sub-schema
+      needsDoctor: { type: Boolean, default: false },
     },
   ])
   results: {
@@ -31,9 +38,12 @@ export class Assessment {
     maxScore: number;
     title: string;
     description: string;
-    message: string; // <-- Add this
-    recommendations: string[]; // <-- Add this
-    needsDoctor: boolean; // <-- Add this
+    message: string;
+    recommendations: {
+      text: string; // Define the structure inline or use a type alias
+      link: string;
+    }[]; // Reflect the structure in the TS type
+    needsDoctor: boolean;
   }[];
 }
 

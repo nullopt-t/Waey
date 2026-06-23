@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsBoolean,
+  IsUrl
 } from "class-validator";
 
 import { Type } from "class-transformer";
@@ -27,6 +28,15 @@ export class SubmitAssessmentDto {
   answers: AnswerDto[];
 }
 
+export class RecommendationDto {
+  @IsString()
+  text: string; // The description/text of the recommendation
+
+  @IsString()
+  @IsUrl() // Validate as a URL string
+  link: string; // The URL associated with the recommendation
+}
+
 export class ResultDto {
   @IsNumber() // Min score should be a number
   minScore: number;
@@ -44,8 +54,9 @@ export class ResultDto {
   message: string;
 
   @IsArray() // Recommendations array
+  @Type(() => RecommendationDto)
   @IsOptional() // Make it optional if not always provided during creation
-  recommendations: string[]; // Or use a more complex object type if recommendations have structure
+  recommendations: [RecommendationDto]; // Or use a more complex object type if recommendations have structure
 
   @IsBoolean() // Flag for doctor referral
   needsDoctor: boolean;
