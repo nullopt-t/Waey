@@ -3,12 +3,149 @@ import { useToast } from '../context/ToastContext.jsx';
 import { medicalContactsAPI } from '../services/medicalContactApi.js';
 import AnimatedItem from '../components/AnimatedItem.jsx';
 
+// --- Booking Modal Component ---
+const BookingModal = ({ contact, onClose, onBooked }) => {
+  const { success, error: showError } = useToast();
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Example: Generate time slots (adjust logic as needed)
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 9; hour <= 17; hour++) { // Example: 9 AM to 5 PM
+      for (let minute = 0; minute < 60; minute += 30) { // Every 30 minutes
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(timeString);
+      }
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
+
+  const handleSubmit = async () => {
+    if (!selectedDate || !selectedTime) {
+      showError('الرجاء اختيار التاريخ والوقت');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Replace with your actual API call and payload structure
+      const payload = {
+        date: selectedDate, // Format might need adjustment (e.g., YYYY-MM-DD)
+        time: selectedTime, // Format might need adjustment (e.g., HH:mm)
+        doctorId: contact._id, // Pass the doctor's ID
+        // Add other necessary fields like userId if needed
+      };
+
+      // Simulate API call with setTimeout
+      // await bookingAPI.bookAppointment(payload); // Replace with your actual API call
+      console.log("Booking request sent:", payload); // Placeholder for API call
+
+      // Simulate success response
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+
+      success('تم حجز الموعد بنجاح!');
+      setBookingConfirmed(true);
+      onBooked && onBooked(); // Optional callback to update parent state
+    } catch (err) {
+      console.error("Booking Error:", err);
+      showError('فشل حجز الموعد. حاول مرة أخرى.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (bookingConfirmed) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="relative bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 w-full max-w-md overflow-hidden">
+          <div className="p-8 text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-green-500/10 text-green-500">
+              <i className="fas fa-check-circle text-4xl" />
+            </div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+              تم الحجز!
+            </h2>
+            <p className="text-[var(--text-secondary)] mb-6">
+              تم حجز موعدك مع {contact.name} بنجاح في {selectedDate} الساعة {selectedTime}.
+            </p>
+            <button
+              onClick={onClose}
+              className="w-full py-3 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] transition-colors"
+            >
+              إغلاق
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 w-full max-w-md">
+        <div className="p-6 border-b border-[var(--border-color)]/30 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-[var(--text-primary)]">حجز موعد مع {contact.name}</h2>
+          <button onClick={onClose} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-2 transition-colors">
+            <i className="fas fa-times text-xl" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">التاريخ</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]} // Minimum selectable date is today
+              className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">الوقت</label>
+            <select
+              value={selectedTime}
+              onChange={(e) => setSelectedTime(e.target.value)}
+              className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
+            >
+              <option value="">اختر الوقت</option>
+              {timeSlots.map(slot => (
+                <option key={slot} value={slot}>{slot}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button onClick={onClose} className="flex-1 px-4 py-2.5 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl font-medium hover:text-[var(--text-primary)] transition-colors">
+              إلغاء
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex-1 px-4 py-2.5 bg-[var(--primary-color)] text-white rounded-xl font-medium hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
+            >
+              {submitting ? <i className="fas fa-spinner fa-spin" /> : 'حجز'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+// --- End of Booking Modal Component ---
+
 const MedicalContactsPage = () => {
   const { error: showError } = useToast();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [bookingContact, setBookingContact] = useState(null); // State for the contact being booked
 
   useEffect(() => {
     loadContacts();
@@ -34,6 +171,14 @@ const MedicalContactsPage = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     loadContacts();
+  };
+
+  const handleBookAppointment = (contact) => {
+    setBookingContact(contact); // Set the contact to book
+  };
+
+  const handleBookingClose = () => {
+    setBookingContact(null); // Close the modal
   };
 
   const getTypeIcon = (type) => {
@@ -118,8 +263,8 @@ const MedicalContactsPage = () => {
                   key={filter.id}
                   onClick={() => setFilterType(filter.id)}
                   className={`px-4 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${filterType === filter.id
-                      ? 'bg-[var(--primary-color)] text-white shadow-lg'
-                      : 'bg-[var(--card-bg)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] border border-[var(--border-color)]'
+                    ? 'bg-[var(--primary-color)] text-white shadow-lg'
+                    : 'bg-[var(--card-bg)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] border border-[var(--border-color)]'
                     }`}
                 >
                   <i className={`fas ${filter.icon} ml-2`}></i>
@@ -205,7 +350,7 @@ const MedicalContactsPage = () => {
                       </a>
                       {contact.type === 'doctor' && (
                         <button
-                          onClick={() => { }}
+                          onClick={() => handleBookAppointment(contact)} // Call handler to open modal
                           className="flex-1 px-3 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors text-center cursor-pointer"
                         >
                           <i className="fas fa-calendar-check ml-1"></i> احجز موعد
@@ -219,6 +364,15 @@ const MedicalContactsPage = () => {
           )}
         </div>
       </section>
+
+      {/* Render Booking Modal if bookingContact is set */}
+      {bookingContact && (
+        <BookingModal
+          contact={bookingContact}
+          onClose={handleBookingClose}
+        // onBooked={someCallbackFunction} // Optional: Pass a callback to update state after booking
+        />
+      )}
     </div>
   );
 };
