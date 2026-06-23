@@ -71,12 +71,7 @@ const Header = () => {
                 <div className="hidden lg:flex items-center gap-6">
                   <Link to="/" className={`font-medium ${location.pathname === '/' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الرئيسية</Link>
                   <Link to="/categories" className={`font-medium ${location.pathname === '/categories' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>الأقسام</Link>
-                  <Link
-                    to="/assessments"
-                    className={`font-medium ${location.pathname === '/assessments' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}
-                  >
-                    الاختبارات
-                  </Link>
+
                   <Link to="/about" className={`font-medium ${location.pathname === '/about' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>عن وعي</Link>
                   <Link to="/contact" className={`font-medium ${location.pathname === '/contact' ? 'text-[#c5a98e]' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] transition-colors`}>تواصل معنا</Link>
                 </div>
@@ -407,12 +402,12 @@ const Header = () => {
                     >
                       الأقسام
                     </Link>
-                    <Link
+                    {/* <Link
                       to="/assessments"
                       className={`font-medium py-3 px-4 rounded-lg ${location.pathname === '/assessments' ? 'text-[#c5a98e] bg-[var(--bg-primary)]/50' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] hover:bg-[var(--bg-primary)]/30 transition-colors`}
                     >
                       الاختبارات
-                    </Link>
+                    </Link>*/}
                     <Link
                       to="/about"
                       className={`font-medium py-3 px-4 rounded-lg ${location.pathname === '/about' ? 'text-[#c5a98e] bg-[var(--bg-primary)]/50' : 'text-[var(--text-primary)]'} hover:text-[#c5a98e] hover:bg-[var(--bg-primary)]/30 transition-colors`}
