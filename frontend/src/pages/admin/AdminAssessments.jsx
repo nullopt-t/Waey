@@ -5,6 +5,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { assessmentAPI } from '../../services/assessmentApi.js';
 
+
 // ─── Question Form Modal ──────────────────────────────────────────────────────
 const QuestionModal = ({ assessmentId, onClose, onSuccess }) => {
   const { success, error: showError } = useToast();
@@ -128,8 +129,74 @@ const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
     questions: assessment?.questions || [] // Array of QuestionDto objects
   });
 
+  const updateResult = (index, field, value) => {
+    setForm(prev => {
+      const updatedResults = [...prev.results];
+      updatedResults[index] = { ...updatedResults[index], [field]: value };
+      return { ...prev, results: updatedResults };
+    });
+  };
+
+  const addNewResult = () => {
+    setForm(prev => ({
+      ...prev,
+      results: [
+        ...prev.results,
+        { minScore: 0, maxScore: 0, title: '', description: '', message: '', recommendations: [], needsDoctor: false }
+      ]
+    }));
+  };
+
+  // Function to remove a specific result object
+  const removeResult = (index) => {
+    setForm(prev => ({
+      ...prev,
+      results: prev.results.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Function to add a recommendation to a specific result object
+  const addRecommendation = (resultIndex) => {
+    setForm(prev => {
+      const updatedResults = [...prev.results];
+      const newRecommendations = [...(updatedResults[resultIndex].recommendations || [])];
+      newRecommendations.push('');
+      updatedResults[resultIndex] = { ...updatedResults[resultIndex], recommendations: newRecommendations };
+      return { ...prev, results: updatedResults };
+    });
+  };
+
+  // Function to update a specific recommendation within a specific result object
+  const updateRecommendation = (resultIndex, recIndex, value) => {
+    setForm(prev => {
+      const updatedResults = [...prev.results];
+      const updatedRecs = [...updatedResults[resultIndex].recommendations];
+      updatedRecs[recIndex] = value;
+      updatedResults[resultIndex] = { ...updatedResults[resultIndex], recommendations: updatedRecs };
+      return { ...prev, results: updatedResults };
+    });
+  };
+
+  // Function to remove a specific recommendation from a specific result object
+  const removeRecommendation = (resultIndex, recIndex) => {
+    setForm(prev => {
+      const updatedResults = [...prev.results];
+      const updatedRecs = updatedResults[resultIndex].recommendations.filter((_, i) => i !== recIndex);
+      updatedResults[resultIndex] = { ...updatedResults[resultIndex], recommendations: updatedRecs };
+      return { ...prev, results: updatedResults };
+    });
+  };
+
+
   const handleSubmit = async () => {
     if (!form.title.trim()) return showError('أدخل عنوان الاختبار');
+    // Optional: Add validation for results array (e.g., check if ranges overlap, if required fields are filled)
+    // Example basic check for empty title/desc/msg in results
+    const invalidResultIndex = form.results.findIndex(r => !r.title.trim() || !r.description.trim() || !r.message.trim());
+    if (invalidResultIndex >= 0) {
+      return showError(`املأ الحقول المطلوبة في نتيجة رقم ${invalidResultIndex + 1}`);
+    }
+
     try {
       setSaving(true);
       if (assessment) {
@@ -140,7 +207,8 @@ const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
         success('تم إنشاء الاختبار');
       }
       onSuccess();
-    } catch {
+    } catch (err) { // Catch the error to show specific messages if needed
+      console.error("Submission Error:", err); // Log for debugging
       showError('فشل حفظ الاختبار');
     } finally {
       setSaving(false);
@@ -150,8 +218,8 @@ const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 w-full max-w-lg">
-        <div className="p-6 border-b border-[var(--border-color)]/30 flex justify-between items-center">
+      <div className="relative bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 w-full max-w-2xl max-h-[90vh] overflow-y-auto"> {/* Increased width */}
+        <div className="p-6 border-b border-[var(--border-color)]/30 flex justify-between items-center sticky top-0 bg-[var(--card-bg)] z-10">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">
             {assessment ? 'تعديل الاختبار' : 'إنشاء اختبار جديد'}
           </h2>
@@ -159,27 +227,169 @@ const AssessmentModal = ({ assessment, onClose, onSuccess }) => {
             <i className="fas fa-times text-xl" />
           </button>
         </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">عنوان الاختبار</label>
-            <input
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
-              placeholder="عنوان الاختبار"
-            />
+        <div className="p-6 space-y-6"> {/* Increased vertical spacing */}
+          {/* Basic Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Grid for basic info */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">عنوان الاختبار</label>
+              <input
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
+                placeholder="عنوان الاختبار"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">الوصف</label>
+              <textarea
+                rows={2}
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors resize-none"
+                placeholder="وصف الاختبار (اختياري)"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">الوصف</label>
-            <textarea
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors resize-none"
-              placeholder="وصف الاختبار (اختياري)"
-            />
+
+          {/* Results Configuration */}
+          <div className="border border-[var(--border-color)]/40 rounded-xl p-5 bg-[var(--bg-secondary)]/20">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-[var(--text-primary)]">نطاقات النتائج</h3>
+              <button
+                type="button"
+                onClick={addNewResult}
+                className="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-medium hover:bg-[var(--primary-hover)] transition-colors text-sm flex items-center gap-1"
+              >
+                <i className="fas fa-plus text-xs"></i> إضافة نطاق
+              </button>
+            </div>
+
+            {form.results.length === 0 ? (
+              <p className="text-center text-[var(--text-secondary)] text-sm py-4">
+                لم يتم تحديد أي نطاقات نتائج. أضف نطاقًا لتحديد الرسائل والتوصيات بناءً على النتيجة.
+              </p>
+            ) : (
+              <div className="space-y-5">
+                {form.results.map((result, index) => (
+                  <div key={index} className="border border-[var(--border-color)]/30 rounded-lg p-4 bg-[var(--card-bg)]">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium text-[var(--text-primary)]">النطاق {index + 1}</h4>
+                      <button
+                        type="button"
+                        onClick={() => removeResult(index)}
+                        className="text-red-500 hover:text-red-700 p-1 transition-colors"
+                        title="حذف النطاق"
+                      >
+                        <i className="fas fa-trash text-sm"></i>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">الحد الأدنى للنقاط</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={result.minScore}
+                          onChange={(e) => updateResult(index, 'minScore', parseInt(e.target.value) || 0)}
+                          className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">الحد الأعلى للنقاط</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={result.maxScore}
+                          onChange={(e) => updateResult(index, 'maxScore', parseInt(e.target.value) || 0)}
+                          className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">العنوان (التشخيص)</label>
+                        <input
+                          value={result.title}
+                          onChange={(e) => updateResult(index, 'title', e.target.value)}
+                          className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors text-sm"
+                          placeholder="مثل: اكتئاب خفيف"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">الوصف</label>
+                        <input
+                          value={result.description}
+                          onChange={(e) => updateResult(index, 'description', e.target.value)}
+                          className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors text-sm"
+                          placeholder="وصف مفصل للنتيجة"
+                        />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">الرسالة الشخصية</label>
+                      <textarea
+                        rows={2}
+                        value={result.message}
+                        onChange={(e) => updateResult(index, 'message', e.target.value)}
+                        className="w-full bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors resize-none text-sm"
+                        placeholder="رسالة تظهر للمستخدم بناءً على النتيجة"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-medium text-[var(--text-secondary)]">التوصيات</label>
+                        <button
+                          type="button"
+                          onClick={() => addRecommendation(index)}
+                          className="text-xs text-[var(--primary-color)] hover:text-[var(--primary-hover)] flex items-center gap-1"
+                        >
+                          <i className="fas fa-plus text-xs"></i> إضافة
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {(result.recommendations || []).map((rec, recIndex) => (
+                          <div key={recIndex} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={rec}
+                              onChange={(e) => updateRecommendation(index, recIndex, e.target.value)}
+                              className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 rounded-xl px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] transition-colors text-sm"
+                              placeholder="توصية"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeRecommendation(index, recIndex)}
+                              className="text-red-500 hover:text-red-700 p-1.5 transition-colors"
+                              title="حذف التوصية"
+                            >
+                              <i className="fas fa-trash text-xs"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`needsDoctor_${index}`}
+                        checked={result.needsDoctor}
+                        onChange={(e) => updateResult(index, 'needsDoctor', e.target.checked)}
+                        className="h-4 w-4 text-[var(--primary-color)] focus:ring-[var(--primary-color)] border-[var(--border-color)] rounded"
+                      />
+                      <label htmlFor={`needsDoctor_${index}`} className="ml-2 block text-sm text-[var(--text-primary)]">
+                        يتطلب زيارة الطبيب
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="flex gap-3 pt-2">
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-4 border-t border-[var(--border-color)]/30 pt-6">
             <button onClick={onClose} className="flex-1 px-4 py-2.5 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl font-medium hover:text-[var(--text-primary)] transition-colors">
               إلغاء
             </button>
@@ -278,6 +488,7 @@ const AdminAssessments = () => {
 
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
   const [editingAssessment, setEditingAssessment] = useState(null);
+  const [loadingEdit, setLoadingEdit] = useState(false); // New state for edit loading
 
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [targetAssessment, setTargetAssessment] = useState(null);
@@ -340,6 +551,23 @@ const AdminAssessments = () => {
       showError('فشل حذف السؤال');
     }
   };
+
+  // Updated handleEdit function
+  const handleEdit = async (assessment) => { // Renamed parameter
+    setLoadingEdit(true); // Set loading state
+    try {
+      // Fetch the *full* assessment details using the existing getOne API call
+      const fullAssessment = await assessmentAPI.getOne(assessment._id);
+      setEditingAssessment(fullAssessment); // Set state with the full data
+      setShowAssessmentModal(true); // Show the modal
+    } catch (err) {
+      console.error("Failed to load assessment for editing:", err);
+      showError("فشل تحميل تفاصيل الاختبار للتعديل.");
+    } finally {
+      setLoadingEdit(false); // Reset loading state
+    }
+  };
+
 
   const filtered = assessments.filter((a) => {
     if (filterStatus === 'published') return a.isPublished;
@@ -476,9 +704,10 @@ const AdminAssessments = () => {
                       <i className="fas fa-plus-circle" />
                     </button>
                     <button
-                      onClick={() => { setEditingAssessment(a); setShowAssessmentModal(true); }}
-                      className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                      onClick={() => handleEdit(a)} // Use the updated handleEdit function
+                      className={`p-2 rounded-lg transition-colors ${loadingEdit ? 'opacity-50 cursor-not-allowed' : 'text-blue-500 hover:bg-blue-500/10'}`} // Apply loading style
                       title="تعديل"
+                      disabled={loadingEdit} // Disable while loading
                     >
                       <i className="fas fa-pen" />
                     </button>
@@ -548,8 +777,8 @@ const AdminAssessments = () => {
       {showAssessmentModal && (
         <AssessmentModal
           assessment={editingAssessment}
-          onClose={() => { setShowAssessmentModal(false); setEditingAssessment(null); }}
-          onSuccess={() => { setShowAssessmentModal(false); setEditingAssessment(null); load(); }}
+          onClose={() => { setShowAssessmentModal(false); setEditingAssessment(null); }} // Reset state on close
+          onSuccess={() => { setShowAssessmentModal(false); setEditingAssessment(null); load(); }} // Reset state and reload on success
         />
       )}
 

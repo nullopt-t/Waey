@@ -17,10 +17,13 @@ export class Assessment {
   // embedded result logic (simple + fast)
   @Prop([
     {
-      minScore: Number,
-      maxScore: Number,
-      title: String,
-      description: String,
+      minScore: { type: Number, required: true },
+      maxScore: { type: Number, required: true },
+      title: { type: String, required: true }, // Admin-defined title
+      description: { type: String, required: true }, // Admin-defined description
+      message: { type: String, required: true }, // Admin-defined message
+      recommendations: [{ type: String }], // Or define a sub-schema if needed
+      needsDoctor: { type: Boolean, default: false }, // Admin-defined flag
     },
   ])
   results: {
@@ -28,6 +31,9 @@ export class Assessment {
     maxScore: number;
     title: string;
     description: string;
+    message: string; // <-- Add this
+    recommendations: string[]; // <-- Add this
+    needsDoctor: boolean; // <-- Add this
   }[];
 }
 

@@ -52,27 +52,89 @@ const QuizModal = ({ assessment, onClose, onDone }) => {
   };
 
   // ─── Result View ───────────────────────────────────────────────
-  if (result) {
+  if (result) { // Check if result object exists (truthy)
+    // Determine styling based on needsDoctor flag or result title/description
+    let resultColorClass = 'text-[var(--primary-color)]'; // Default
+    let resultBgColorClass = 'bg-[var(--primary-color)]'; // Default for header bar
+    let resultIcon = 'fa-info-circle'; // Default icon
+
+    if (result.needsDoctor) {
+      // High priority if doctor is needed
+      resultColorClass = 'text-red-500';
+      resultBgColorClass = 'bg-red-500';
+      resultIcon = 'fa-exclamation-triangle';
+    } else if (result.result.title.toLowerCase().includes('high') || result.result.title.toLowerCase().includes('severe')) {
+      resultColorClass = 'text-red-500';
+      resultBgColorClass = 'bg-red-500';
+      resultIcon = 'fa-times-circle';
+    } else if (result.result.title.toLowerCase().includes('moderate')) {
+      resultColorClass = 'text-orange-500';
+      resultBgColorClass = 'bg-orange-500';
+      resultIcon = 'fa-exclamation-triangle';
+    } else if (result.result.title.toLowerCase().includes('mild') || result.result.title.toLowerCase().includes('low')) {
+      resultColorClass = 'text-yellow-500';
+      resultBgColorClass = 'bg-yellow-500';
+      resultIcon = 'fa-exclamation';
+    } else if (result.result.title.toLowerCase().includes('normal') || result.result.title.toLowerCase().includes('minimal')) {
+      resultColorClass = 'text-green-500';
+      resultBgColorClass = 'bg-green-500';
+      resultIcon = 'fa-smile';
+    }
+    // Add more conditions as needed based on your admin-defined titles
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseResult} />
         <div className="relative bg-[var(--card-bg)] backdrop-blur-md rounded-2xl shadow-2xl border border-[var(--border-color)]/30 w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300">
 
-          {/* Header Color Bar */}
-          <div className="h-2 w-full bg-[var(--primary-color)]" />
+          {/* Header Color Bar - Dynamic based on diagnosis */}
+          <div className={`h-2 w-full ${resultBgColorClass}`} />
 
           <div className="p-8 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-[var(--primary-color)]/10 text-[var(--primary-color)]">
-              <i className="fas fa-check-circle text-4xl" />
+            {/* Status Icon - Dynamic based on diagnosis */}
+            <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${resultColorClass.replace('text-', 'bg-')} bg-opacity-10`}>
+              <i className={`fas ${resultIcon} text-4xl ${resultColorClass}`} />
             </div>
 
-            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-              مكتمل
+            {/* Diagnosis/State Title - FROM ADMIN DEFINITION (result.result.title) */}
+            <h2 className={`text-2xl font-bold text-[var(--text-primary)] mb-2 ${resultColorClass}`}>
+              {result.result.title} {/* <-- This is the diagnosis/state from the matched admin-defined result */}
             </h2>
 
-            <p className="text-[var(--text-secondary)] mb-8">
-              تم إرسال إجاباتك بنجاح
+            {/* Personalized Message - FROM ADMIN DEFINITION (result.result.message) */}
+            <p className="text-[var(--text-secondary)] mb-4">
+              {result.result.message} {/* <-- Displays the message from the matched admin-defined result */}
             </p>
+
+            {/* --- SCORE SUMMARY REMOVED --- */}
+            {/* <div className="bg-[var(--bg-secondary)] rounded-xl p-4 mb-6">
+                <p className="text-[var(--text-primary)] font-medium">
+                  النتيجة: {result.score} / {result.maxScore} ({result.percentage.toFixed(2)}%)
+                </p>
+              </div> */}
+
+            {/* Doctor Referral Warning - Conditional based on admin flag */}
+            {result.needsDoctor && (
+              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+                <p className="font-bold">تنبيه هام:</p>
+                <p>بناءً على نتائجك، يُوصى بزيارة طبيب أو معالج نفسي.</p>
+              </div>
+            )}
+
+            {/* Recommendations Section - Conditional based on admin-defined list */}
+            {result.recommendations && result.recommendations.length > 0 && (
+              <div className="text-left mb-6">
+                <h3 className="font-bold text-[var(--text-primary)] mb-2">التوصيات:</h3>
+                <ul className="list-disc list-inside text-[var(--text-secondary)] space-y-1">
+                  {result.recommendations.map((rec, index) => (
+                    <li key={index}>
+                      {/* Example: Adjust based on your RecommendationItem structure */}
+                      {rec.title || rec} {/* Fallback to rec if it's a simple string */}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <button
               onClick={handleCloseResult}

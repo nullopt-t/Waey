@@ -107,11 +107,12 @@ export class AssessmentService {
     };
   }
 
+
   async submit(userId: string, dto: SubmitAssessmentDto) {
     const assessment = await this.assessmentModel.findById(dto.assessmentId);
     if (!assessment) throw new NotFoundException('Assessment not found');
 
-    const questions = await this.questionModel.find({ assessmentId: dto.assessmentId });
+    const questions = await this.questionModel.find({ assessmentId: new Types.ObjectId(dto.assessmentId) });
     const questionMap = new Map(questions.map((q) => [q._id.toString(), q]));
 
     let totalScore = 0;
@@ -135,43 +136,94 @@ export class AssessmentService {
       return acc + maxOptScore;
     }, 0);
 
+    // Calculate percentage
+    const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+
     // Find matching result
     let resultTitle = 'Completed';
     let resultDescription = 'Assessment submitted successfully.';
+    let resultMessage = 'Thank you for completing the assessment.'; // Default message
+    let recommendations: any[] = []; // Array for recommendations
+    let needsDoctor = false; // Flag for doctor referral
+    let matchedResultObject = null; // Store the matched object for potential extra data
 
     if (assessment.results && assessment.results.length > 0) {
-      const matchedResult = assessment.results.find(
+      matchedResultObject = assessment.results.find(
         (r) => totalScore >= r.minScore && totalScore <= r.maxScore
       );
 
-      if (!matchedResult) {
+      if (!matchedResultObject) {
         // Fallback if score is outside all defined ranges
         resultTitle = 'Ungraded';
         resultDescription = 'Score did not match any predefined result category.';
+        resultMessage = 'Could not determine a specific outcome for your score.';
       } else {
-        resultTitle = matchedResult.title;
-        resultDescription = matchedResult.description;
+        resultTitle = matchedResultObject.title;
+        resultDescription = matchedResultObject.description;
+        // --- NEW: Extract message, recommendations, and doctor flag from matched result ---
+        resultMessage = matchedResultObject.message || resultMessage; // Use defined message, fallback to default
+        recommendations = matchedResultObject.recommendations || recommendations; // Use defined recommendations
+        needsDoctor = !!matchedResultObject.needsDoctor; // Ensure boolean (truthy/falsy -> true/false)
       }
     }
 
-    // Save attempt
-    await this.attemptModel.create({
-      userId,
-      assessmentId: dto.assessmentId,
-      answers: dto.answers,
-      totalScore,
-      resultTitle,
-      resultDescription,
+    // --- Prepare answers array for AssessmentAttempt schema ---
+    const formattedAnswers = dto.answers.map(answer => {
+      const question = questionMap.get(answer.questionId); // Use the map created earlier
+      if (!question) {
+        // Handle edge case if question was not found during initial processing
+        console.warn(`Question ${answer.questionId} not found for attempt.`);
+        return { questionId: new Types.ObjectId(answer.questionId), score: 0 };
+      }
+
+      const selectedOption = question.options.find((opt: any) => opt._id.toString() === answer.optionId);
+      if (!selectedOption) {
+        // Handle edge case if option was not found during initial processing
+        console.warn(`Option ${answer.optionId} not found for question ${answer.questionId}.`);
+        return { questionId: new Types.ObjectId(answer.questionId), score: 0 };
+      }
+
+      // Return the structure expected by AssessmentAttemptSchema
+      return {
+        questionId: new Types.ObjectId(answer.questionId),
+        score: selectedOption.score, // Use the score from the selected option
+      };
     });
 
+    // --- Save attempt with correct structure and calculated data ---
+    await this.attemptModel.create({
+      userId: new Types.ObjectId(userId), // Ensure ObjectId type if needed
+      assessmentId: new Types.ObjectId(dto.assessmentId),
+      answers: formattedAnswers, // Use the correctly formatted array
+      totalScore, // Save the calculated total score
+      maxScore, // Save max score
+      percentage, // Save percentage
+      resultTitle, // Save result title
+      resultDescription, // Save result description
+      resultMessage, // Save result message
+      recommendations, // Save recommendations
+      needsDoctor, // Save doctor referral flag
+      matchedResultId: matchedResultObject?._id, // Optionally save matched result ID
+    });
+
+    // Return the enhanced data for the frontend
     return {
+      success: true,
       score: totalScore,
+      maxScore,
+      percentage,
       result: {
         title: resultTitle,
         description: resultDescription,
+        message: resultMessage,
       },
+      recommendations,
+      needsDoctor,
+      // matchedResult: matchedResultObject, // If needed
     };
   }
+
+
   async togglePublish(id: string, isPublished: boolean) {
     const assessment = await this.assessmentModel.findById(id);
 
